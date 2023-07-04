@@ -139,10 +139,10 @@ class Bomb(pg.sprite.Sprite):
         引数2 bird：攻撃対象のこうかとん
         """
         super().__init__()
-        rad = random.randint(10, 50)  # 爆弾円の半径：10以上50以下の乱数
+        self.rad = random.randint(10, 50)  # 爆弾円の半径：10以上50以下の乱数
         color = random.choice(__class__.colors)  # 爆弾円の色：クラス変数からランダム選択
-        self.image = pg.Surface((2*rad, 2*rad))
-        pg.draw.circle(self.image, color, (rad, rad), rad)
+        self.image = pg.Surface((2*self.rad, 2*self.rad))
+        pg.draw.circle(self.image, color, (self.rad, self.rad), self.rad)
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
         # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
@@ -282,6 +282,7 @@ class Enemy(pg.sprite.Sprite):
         self.bound = random.randint(50, HEIGHT/2)  # 停止位置
         self.state = "down"  # 降下状態or停止状態
         self.interval = random.randint(50, 300)  # 爆弾投下インターバル
+        self.rad = max([self.rect[i+2] for i in range(2)])//2
 
     def update(self):
         """
@@ -317,6 +318,42 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class GravitySphere(pg.sprite.Sprite):
+    """
+        重力球に関するclass
+    """
+    def __init__(self, bird: Bird, effect_time: int = 500, sphere_radius: int = 200) -> None:
+        """
+            変数初期化
+        :param effect_time: 効果時間-Default:500
+        """
+        super().__init__()
+
+        # variables
+        self.effect_time = -effect_time
+        self.rad = sphere_radius
+
+        # surface
+        self.image = pg.Surface([sphere_radius*2 for i in range(2)])
+        pg.draw.rect(self.image, [255, 255, 255], [0, 0]+[sphere_radius*2 for i in range(2)])
+        self.image.set_colorkey([255, 255, 255])
+        pg.draw.circle(self.image, [0, 0, 0], [sphere_radius for i in range(2)], sphere_radius)
+        self.image.set_alpha(191)
+        self.rect = self.image.get_rect()
+        self.rect.center = bird.rect.center
+
+    def update(self, bird: Bird) -> None:
+        """
+            更新
+        """
+        if self.effect_time >= 0:
+            self.kill()
+            return
+        self.rect.center = bird.rect.center
+        self.effect_time += 1
+        return 
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -329,6 +366,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    gravity_spheres = pg.sprite.Group()
     shields = pg.sprite.Group()
     bird.change_state("normal", -1)
 
@@ -346,6 +384,10 @@ def main():
 
             if event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK and len(shields) == 0 and score.score >= 50:
                 shields.add(Shield(bird))
+                score.score -= 50
+
+            if event.type == pg.KEYDOWN and event.key == pg.K_TAB and score.score >= 50:
+                gravity_spheres.add(GravitySphere(bird))
                 score.score -= 50
         
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
@@ -384,6 +426,24 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
 
+        for gravity_sphere in gravity_spheres:
+            gra_sph_center = list(gravity_sphere.rect.center)
+            for emy in emys:
+                difference = [list(emy.rect.center)[i] - gra_sph_center[i] for i in range(2)]
+                direct_distance = math.sqrt(math.pow(difference[0], 2) + math.pow(difference[1], 2))
+                if direct_distance < gravity_sphere.rad + emy.rad:
+                    exps.add(Explosion(emy, 100))  # 爆発エフェクト
+                    score.score_up(10)  # 10点アップ
+                    bird.change_img(6, screen)  # こうかとん喜びエフェクト
+                    emy.kill()
+            for bomb in bombs:
+                difference = [list(bomb.rect.center)[i] - gra_sph_center[i] for i in range(2)]
+                direct_distance = math.sqrt(math.pow(difference[0], 2) + math.pow(difference[1], 2))
+                if direct_distance < gravity_sphere.rad + bomb.rad:
+                    exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+                    score.score_up(1)  # 1点アップ
+                    bomb.kill()
+          
         for emy in pg.sprite.groupcollide(emys, shields, True, False).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.score_up(10)  # 10点アップ
@@ -414,6 +474,8 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        gravity_spheres.update(bird)
+        gravity_spheres.draw(screen)
         score.update(screen)
         shields.update()
         shields.draw(screen)
