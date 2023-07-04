@@ -6,8 +6,8 @@ import time
 import pygame as pg
 
 
-WIDTH = 1000  # ゲームウィンドウの幅
-HEIGHT = 600  # ゲームウィンドウの高さ
+WIDTH = 1600  # ゲームウィンドウの幅
+HEIGHT = 900  # ゲームウィンドウの高さ
 
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
@@ -285,14 +285,14 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 if key_lst[pg.K_LSHIFT]:#ビーム複数打つ
-                    beam = NeoBeam(bird, beam_many)#(1~9)　デフォルト＝５
+                    beam = NeoBeam(bird, beam_many)#(1~14)
                     beams.add(beam.gen_beams())
                 
                 else:#ビーム１つ打つ
                     beam = NeoBeam(bird, 1)
                     beams.add(beam.gen_beams())
 
-            if event.type == pg.KEYDOWN and event.key == pg.K_a and score.score >= beam_many*10:
+            if event.type == pg.KEYDOWN and event.key == pg.K_a and score.score >= beam_many*10 and beam_many < 14:
                 score.score_up(-beam_many*10)
                 beam_many += 1
 
