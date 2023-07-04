@@ -317,7 +317,6 @@ class Score:
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         screen.blit(self.image, self.rect)
 
-
 class GravitySphere(pg.sprite.Sprite):
     """
         重力球に関するclass
@@ -330,7 +329,7 @@ class GravitySphere(pg.sprite.Sprite):
         super().__init__()
 
         # variables
-        self.effect_time = -effect_time
+      　        self.effect_time = -effect_time
         self.rad = sphere_radius
 
         # surface
@@ -353,6 +352,31 @@ class GravitySphere(pg.sprite.Sprite):
         self.effect_time += 1
         return 
 
+class NeoGravity(pg.sprite.Sprite):
+    """
+        超重力砲（超協力重力場）に関するclass
+    """
+    def __init__(self, effect_time: int = 400):
+        """
+            変数初期化
+        :param effect_time: 効果時間-Default:400
+        self.__effect_time = -effect_time
+
+        # surface
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
+        self.image.set_alpha(127)
+        self.rect = self.image.get_rect()
+
+    def update(self) -> None:
+        """
+            更新
+        :return: None
+        """
+        if self.__effect_time >= 0:
+            self.kill()
+        self.__effect_time += 1
+        return
 
 def main():
     pg.display.set_caption("真！こうかとん無双")
@@ -366,6 +390,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    neo_gravitys = pg.sprite.Group()
     gravity_spheres = pg.sprite.Group()
     shields = pg.sprite.Group()
     bird.change_state("normal", -1)
@@ -390,6 +415,10 @@ def main():
                 gravity_spheres.add(GravitySphere(bird))
                 score.score -= 50
         
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN and score.score >= 200:
+                neo_gravitys.add(NeoGravity())
+                score.score -= 200
+                
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 if key_lst[pg.K_LSHIFT]:#ビーム複数打つ
                     beam = NeoBeam(bird, 5)#(1~9)　デフォルト＝５
@@ -407,7 +436,10 @@ def main():
         if bird.hyper_life < 0:
             bird.change_state("normal", -1)
         
-        screen.blit(bg_img, [0, 0])
+        if len(neo_gravitys) == 0:
+            screen.blit(bg_img, [0, 0])
+        else:
+            screen.blit(bg_img, [random.randint(-1,1) for i in range(2)])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
@@ -423,6 +455,15 @@ def main():
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.score_up(1)  # 1点アップ
+        
+        # neo gravity collide
+        for emy in pg.sprite.groupcollide(emys, neo_gravitys, True, False).keys():
+            exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            score.score_up(10)  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        for bomb in pg.sprite.groupcollide(bombs, neo_gravitys, True, False).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
 
@@ -474,6 +515,8 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        neo_gravitys.update()
+        neo_gravitys.draw(screen)
         gravity_spheres.update(bird)
         gravity_spheres.draw(screen)
         score.update(screen)
