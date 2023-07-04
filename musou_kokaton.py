@@ -227,9 +227,9 @@ class Enemy(pg.sprite.Sprite):
         super().__init__()
         self.image = random.choice(__class__.imgs)
         self.rect = self.image.get_rect()
-        self.rect.center = random.randint(WIDTH, WIDTH), 0
+        self.rect.center = random.randint(0, WIDTH), 0
         self.vy = +6
-        self.bound = random.randint(HEIGHT/2, HEIGHT/2)  # 停止位置
+        self.bound = random.randint(50, HEIGHT/2)  # 停止位置
         self.state = "down"  # 降下状態or停止状態
         self.interval = random.randint(50, 300)  # 爆弾投下インターバル
 
@@ -288,18 +288,18 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            #if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-        beams.add(Beam(bird))
-            #if event.type == pg.KEYDOWN and event.key == pg.K_RSHIFT and score.score >= 100:
-        score.score -= 100
-        bird.change_state("hyper", 500)
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN and event.key == pg.K_RSHIFT and score.score >= 100:
+                score.score -= 100
+                bird.change_state("hyper", 500)
 
         if bird.hyper_life < 0:
             bird.change_state("normal", -1)
 
         screen.blit(bg_img, [0, 0])
 
-        if tmr%2 == 0:  # 200フレームに1回，敵機を出現させる
+        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
 
         for emy in emys:
