@@ -7,8 +7,8 @@ import pygame as pg
 from pygame.sprite import AbstractGroup
 
 
-WIDTH = 1600  # ゲームウィンドウの幅
-HEIGHT = 900  # ゲームウィンドウの高さ
+WIDTH = 1000  # ゲームウィンドウの幅
+HEIGHT = 600  # ゲームウィンドウの高さ
 
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
@@ -459,7 +459,7 @@ def main():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            score.score_up(1000)  # 10点アップ
+            score.score_up(10)  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
