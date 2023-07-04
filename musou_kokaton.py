@@ -329,7 +329,7 @@ class GravitySphere(pg.sprite.Sprite):
         super().__init__()
 
         # variables
-      　        self.effect_time = -effect_time
+        self.effect_time = -effect_time
         self.rad = sphere_radius
 
         # surface
@@ -361,8 +361,11 @@ class NeoGravity(pg.sprite.Sprite):
             変数初期化
         :param effect_time: 効果時間-Default:400
         self.__effect_time = -effect_time
+        """
+        super().__init__()
 
         # surface
+        self.__effect_time = -effect_time
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.image.set_alpha(127)
