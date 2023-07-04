@@ -75,6 +75,7 @@ class Bird(pg.sprite.Sprite):
         self.state = "normal"
         self.hyper_life = -1
 
+
     def change_img(self, num: int, screen: pg.Surface):
         """
         こうかとん画像を切り替え，画面に転送する
@@ -315,6 +316,11 @@ def main():
                 else:#ビーム１つ打つ
                     beam = NeoBeam(bird, 1)
                     beams.add(beam.gen_beams())
+           
+            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:
+                bird.speed = 20
+            if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:
+                bird.speed = 10
         
         if bird.hyper_life < 0:
             bird.change_state("normal", -1)
