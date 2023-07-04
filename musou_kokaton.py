@@ -4,6 +4,7 @@ import sys
 import time
 
 import pygame as pg
+from pygame.sprite import AbstractGroup
 
 
 WIDTH = 1000  # ゲームウィンドウの幅
@@ -231,6 +232,40 @@ class Explosion(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
+class Shield(pg.sprite.Sprite):
+    """
+    CapsLockキーを押下した際に
+    こうかとんの前に防御壁を出現させるクラス
+    """
+
+    def __init__(self, bird: Bird, life: int = 400):
+        """
+        防御壁surface作成
+        引数１：bird...こうかとん
+        引数２：life...発動時間
+        """
+        super().__init__()
+
+        self.vx, self.vy = bird.get_direction()
+        angle = math.degrees(math.atan2(-self.vy, self.vx))
+        self.image = pg.transform.rotozoom(pg.Surface((20, bird.rect.height*2)), angle, 1.0)
+
+        pg.draw.rect(self.image, (0, 0, 0), pg.Rect(0, 0, 20, bird.rect.height*2))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
+        self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
+        self.life = life
+
+
+    def update(self):
+        """
+        lifeに応じて防御壁を削除
+        """
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
+
 
 class Enemy(pg.sprite.Sprite):
     """
@@ -294,6 +329,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    shields = pg.sprite.Group()
     bird.change_state("normal", -1)
 
     tmr = 0
@@ -308,6 +344,10 @@ def main():
                 score.score -= 100
                 bird.change_state("hyper", 500)
 
+            if event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK and len(shields) == 0 and score.score >= 50:
+                shields.add(Shield(bird))
+                score.score -= 50
+        
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 if key_lst[pg.K_LSHIFT]:#ビーム複数打つ
                     beam = NeoBeam(bird, 5)#(1~9)　デフォルト＝５
@@ -344,6 +384,15 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
 
+        for emy in pg.sprite.groupcollide(emys, shields, True, False).keys():
+            exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            score.score_up(10)  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+
+        for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.score_up(1)  # 1点アップ
+            
         if bird.state == "hyper":
             for bomb in pg.sprite.spritecollide(bird, bombs, True):
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
@@ -366,6 +415,8 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        shields.update()
+        shields.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
